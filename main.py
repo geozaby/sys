@@ -3,19 +3,26 @@ import subprocess
 import os
 
 # Titre de l'application
-st.title("Exécution de code C avec Streamlit")
+st.title("Écrire, Compiler et Exécuter du Code C avec Streamlit")
 
-# Téléchargement du fichier C
-uploaded_file = st.file_uploader("Télécharger votre fichier C (code.c)", type=["c"])
+# Champ de texte pour écrire du code C
+code_c = st.text_area("Écris ton code C ici", value="""
+#include <stdio.h>
 
-if uploaded_file is not None:
-    # Sauvegarde du fichier téléchargé
-    with open("code.c", "wb") as f:
-        f.write(uploaded_file.getbuffer())
-    st.success("Fichier téléchargé et enregistré avec succès")
+int main() {
+    printf("Hello, World!\\n");
+    return 0;
+}
+""", height=200)
 
+# Bouton pour compiler et exécuter le code
+if st.button("Compiler et Exécuter"):
+    # Sauvegarder le code dans un fichier temporaire
+    with open("temp_code.c", "w") as f:
+        f.write(code_c)
+    
     # Compilation du fichier C
-    compile_command = ["gcc", "code.c", "-o", "code_executable"]
+    compile_command = ["gcc", "temp_code.c", "-o", "temp_executable"]
     compilation_result = subprocess.run(compile_command, capture_output=True, text=True)
 
     # Vérification si la compilation a réussi
@@ -23,7 +30,7 @@ if uploaded_file is not None:
         st.success("Compilation réussie")
 
         # Exécution du fichier compilé
-        execution_result = subprocess.run(["./code_executable"], capture_output=True, text=True)
+        execution_result = subprocess.run(["./temp_executable"], capture_output=True, text=True)
         
         # Affichage de la sortie du programme C
         st.subheader("Sortie du programme :")
@@ -32,4 +39,3 @@ if uploaded_file is not None:
         # Affichage des erreurs de compilation
         st.error("Erreur de compilation")
         st.text(compilation_result.stderr)
-
