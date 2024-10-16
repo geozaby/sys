@@ -41,6 +41,7 @@ event = st.empty()
 # Python reçoit l'événement envoyé par JavaScript
 st.session_state.event_log = []
 
+
 def js_event_listener():
     js_event = st.experimental_get_query_params()
     if "event" in js_event:
