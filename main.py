@@ -1,41 +1,49 @@
 import streamlit as st
-import subprocess
-import os
+from streamlit.components.v1 import html
 
 # Titre de l'application
-st.title("Écrire, Compiler et Exécuter du Code C avec Streamlit")
+st.title("Détection de changement de taille de fenêtre ou de focus")
 
-# Champ de texte pour écrire du code C
-code_c = st.text_area("Écris ton code C ici", value="""
-#include <stdio.h>
+# Instructions pour l'utilisateur
+st.write("Cette application détecte si vous modifiez la taille de la fenêtre ou si vous changez d'onglet ou d'application.")
 
-int main() {
-    printf("Hello, World!\\n");
-    return 0;
-}
-""", height=200)
+# JavaScript pour détecter les événements de redimensionnement et de perte de focus
+js_code = """
+<script>
+    function sendEvent(eventType) {
+        // Envoi de l'événement à Streamlit via un appel au script Python
+        const iframe = document.getElementById('streamlit');
+        iframe.contentWindow.postMessage({event: eventType}, '*');
+    }
 
-# Bouton pour compiler et exécuter le code
-if st.button("Compiler et Exécuter"):
-    # Sauvegarder le code dans un fichier temporaire
-    with open("temp_code.c", "w") as f:
-        f.write(code_c)
-    
-    # Compilation du fichier C
-    compile_command = ["gcc", "temp_code.c", "-o", "temp_executable"]
-    compilation_result = subprocess.run(compile_command, capture_output=True, text=True)
+    // Détecter les changements de taille de la fenêtre
+    window.addEventListener('resize', () => {
+        sendEvent('resize');
+    });
 
-    # Vérification si la compilation a réussi
-    if compilation_result.returncode == 0:
-        st.success("Compilation réussie")
+    // Détecter lorsque l'utilisateur change d'onglet ou passe à une autre application
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            sendEvent('hidden');
+        } else {
+            sendEvent('visible');
+        }
+    });
+</script>
+"""
 
-        # Exécution du fichier compilé
-        execution_result = subprocess.run(["./temp_executable"], capture_output=True, text=True)
-        
-        # Affichage de la sortie du programme C
-        st.subheader("Sortie du programme :")
-        st.text(execution_result.stdout)
-    else:
-        # Affichage des erreurs de compilation
-        st.error("Erreur de compilation")
-        st.text(compilation_result.stderr)
+# Fonctionnalité pour recevoir les événements depuis JavaScript
+html(js_code)
+
+# Afficher les événements reçus
+event = st.empty()
+
+# Python reçoit l'événement envoyé par JavaScript
+st.session_state.event_log = []
+
+def js_event_listener():
+    js_event = st.experimental_get_query_params()
+    if "event" in js_event:
+        event_type = js_event["event"][0]
+        st.session_state.event_log.append(event_type)
+        event.write(f"Événement détecté : {event_type}")
